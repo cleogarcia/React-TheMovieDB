@@ -9,27 +9,28 @@ import {
   GetAdventureMovies,
   TheMovieDB // Tipo de retorno da função para obter informações dos filmes
 } from "./services/movie.service";
-import { GetMovieDetails } from "./services/movie.details.service"; // Função para obter detalhes de um filme específico
+import { GetMovieDetails } from "./services/movie.details.service";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { Modal, Button, Carousel, Row, Col } from 'react-bootstrap'; // Componentes do Bootstrap para criar modais, botões, carrosséis, linhas e colunas
+import { Modal, Button, Carousel, Row, Col } from 'react-bootstrap';
+
+import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
 
 function App() {
-  // Estados para armazenar os diferentes tipos de filmes e os detalhes de um filme selecionado
   const [popularMovies, setPopularMovies] = useState<TheMovieDB | undefined>();
   const [topRatedMovies, setTopRatedMovies] = useState<TheMovieDB | undefined>();
   const [comedyMovies, setComedyMovies] = useState<TheMovieDB | undefined>();
   const [actionMovies, setActionMovies] = useState<TheMovieDB | undefined>();
   const [adventureMovies, setAdventureMovies] = useState<TheMovieDB | undefined>();
-  const [showModal, setShowModal] = useState<boolean>(false); // Estado para controlar a exibição do modal
-  const [selectedMovie, setSelectedMovie] = useState<any | null>(null); // Estado para armazenar os detalhes do filme selecionado
-  const [modalTitle, setModalTitle] = useState<string>(""); // Estado para o título do modal
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [selectedMovie, setSelectedMovie] = useState<any | null>(null);
+  const [modalTitle, setModalTitle] = useState<string>("");
+
+  
 
   useEffect(() => {
-    // Função que é executada quando o componente é montado
     async function fetchData() {
-      const apiKey = import.meta.env.VITE_API_KEY; // Chave de API para acesso aos dados dos filmes
+      const apiKey = import.meta.env.VITE_API_KEY;
 
-      // Obtendo diferentes tipos de filmes usando as funções de serviço e armazenando-os nos estados correspondentes
       const fetchedPopularMovies = await GetPopularMovies(`/movie/popular?language=pt-BR&page=1&api_key=${apiKey}`);
       setPopularMovies(fetchedPopularMovies);
 
@@ -46,32 +47,39 @@ function App() {
       setAdventureMovies(fetchedAdventureMovies);
     }
 
-    fetchData(); // Chamando a função para buscar os dados dos filmes ao carregar o componente
+    fetchData();
   }, []);
 
   async function MovieDetails(idMovie: number) {
-    // Função para buscar os detalhes de um filme específico usando seu ID
     const movieDetail = await GetMovieDetails(idMovie);
-    setSelectedMovie(movieDetail); // Armazena os detalhes do filme selecionado
-    setShowModal(true); // Exibe o modal com os detalhes do filme
+    setSelectedMovie(movieDetail);
+    setShowModal(true);
   }
 
-  const renderCarousel = (title: string, movies: any[]) => {
-    // Função para renderizar um carrossel de filmes
-    setModalTitle(title);
-    setSelectedMovie(movies);
-    setShowModal(true);
+  const addToFavorites = () => {
+    if (!selectedMovie) {
+      return;
+    }
+
+    const existingFavorites = JSON.parse(localStorage.getItem('favoriteMovies') || '[]');
+    const isAlreadyAdded = existingFavorites.some((fav: any) => fav.id === selectedMovie.id);
+
+    if (!isAlreadyAdded) {
+      const updatedFavorites = [...existingFavorites, selectedMovie];
+      localStorage.setItem('favoriteMovies', JSON.stringify(updatedFavorites));
+      alert('Filme adicionado aos favoritos!');
+    } else {
+      alert('Este filme já está na lista de favoritos!');
+    }
   };
 
   const renderLimitedMovies = (title: string, movies: any[]) => {
-    // Função para renderizar uma lista limitada de filmes
-    const slicedMovies = movies.slice(0, 4); // Limita a exibição a 4 filmes
+    const slicedMovies = movies.slice(0, 4);
 
     return (
       <div>
         <h2>{title}</h2>
         <Row>
-          {/* Mapeia os filmes e exibe uma imagem para cada um */}
           {slicedMovies.map((movie) => (
             <Col xs={6} sm={3} key={movie.id} onClick={() => MovieDetails(movie.id)}>
               <img
@@ -83,7 +91,6 @@ function App() {
             </Col>
           ))}
         </Row>
-        {/* Carrossel que exibe todas as imagens dos filmes */}
         <Carousel>
           {movies.map((movie, index) => (
             <Carousel.Item key={index}>
@@ -150,15 +157,50 @@ function App() {
             </Modal.Body>
             {/* Botão para fechar o modal */}
             <Modal.Footer>
-              <Button variant="secondary" onClick={() => setShowModal(false)}>
-                Fechar
+              <Button variant="secondary" onClick={() => setShowModal(false)}> Fechar
               </Button>
+              <Button variant="primary" onClick={addToFavorites}> Adicionar aos Favoritos
+          </Button>
             </Modal.Footer>
           </>
         )}
       </Modal>
     </div>
   );
+
+//--------------------------------------
+return (
+  <Router>
+    <div>
+      <nav>
+        <ul>
+          <li>
+            <Link to="/">Listagem de Filmes</Link>
+          </li>
+          <li>
+            <Link to="/recomendacoes">Recomendação de Filmes</Link>
+          </li>
+        </ul>
+      </nav>
+
+      <switch>
+        <Route path="/recomendacoes">
+          {/* Aqui implementar a lógica para a tela de recomendações */}
+          {/* Recupera os filmes favoritos do localStorage */}
+          {/* Use os IDs dos filmes favoritos para obter recomendações da API The Movie DB */}
+          {/* Mostrar recomendações na interface */}
+          {/* Marcar filmes já adicionados aos favoritos e desabilite o botão de adição */}
+          {/* componente separado para isso */}
+        </Route>
+        <Route path="/">
+          {/* Aqui está a lógica para a tela principal (Listagem de Filmes) */}
+          {/* Mantenha a lógica existente para a listagem de filmes */}
+        </Route>
+      </switch>
+    </div>
+  </Router>
+);
 }
+
 
 export default App;
